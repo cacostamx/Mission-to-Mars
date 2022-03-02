@@ -18,7 +18,9 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        # Create dictionary to hold list of dictionaries with the hemispheres image_urls and titles
+        "hemispheres_img": hemispheres_data(browser)
     }
     # Stop webdriver and return data
     browser.quit()
@@ -63,7 +65,7 @@ def featured_image(browser):
     url = 'https://spaceimages-mars.com'
     browser.visit(url)
 
-        # Find and click the full image button
+    # Find and click the full image button
     full_image_elem = browser.find_by_tag('button')[1]
     full_image_elem.click()
 
@@ -102,6 +104,39 @@ def mars_facts():
 
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
+
+def hemispheres_data(browser):
+    # 1. Use browser to visit the URL 
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+
+    # 2. Create a list to hold the images and titles.
+    hemisphere_image_urls = []
+
+    # 3. Write code to retrieve the image urls and titles for each hemisphere.
+    # Visit the main page
+    html = browser.html
+    hemispheres_soup = soup(html, 'html.parser')
+
+    try:
+        # retrieve the divs where images info is stored
+        rows = hemispheres_soup.find_all('div', class_="item")
+
+        # iterate through elements to retrieve links, and titles, and visit the link for final image_urls
+        for row in rows:
+            title = row.h3.get_text() 
+            link = row.a['href']
+            browser.visit(url+link)
+            html_image = browser.html
+            html_image_sp = soup(html_image, 'html.parser')
+            image_url = url + html_image_sp.find('div', class_="downloads").a['href']
+            dict = {"title": title, "image_url": image_url}
+            if dict not in hemisphere_image_urls:
+                hemisphere_image_urls.append(dict)
+    except AttributeError:
+        return None
+
+    return hemisphere_image_urls
 
 if __name__ == "__main__":
     # If running as script, print scraped data
